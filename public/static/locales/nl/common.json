@@ -36,7 +36,7 @@
         "cartContains_other": "Uw winkelmand bevat {{count}} producten",
         "coupon_code": "Coupon code",
         "gift_card_code": "Cadeaubon code",
-        "gift_card_or_coupon_code": "Cadeaubon code of coupon code",
+        "gift_card_or_coupon_code": "Cadeaubon of coupon code",
         "quantity": "HOEVEELHEID: {{count}}",
         "quantity_other": "HOEVEELHEID: {{count}}",
         "quantity_stock": "HOEVEELHEID: <0/>",
