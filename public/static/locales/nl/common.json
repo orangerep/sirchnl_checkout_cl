@@ -1,0 +1,142 @@
+{
+    "general": {
+        "title": "{{companyName}} - Kassa",
+        "systemError": "Het spijt ons, maar er is iets fout gegaan!",
+        "retry_error_code": "Verbindingsproblemen",
+        "retry_error_description": "Probeer de pagina opnieuw te laden",
+        "invalid": "Deze bestelling is niet beschikbaar.",
+        "edit": "Bewerken",
+        "free" : "Gratis",
+        "apply": "Toepassen",
+        "privacy_and_terms": "Door op het selectievakje te klikken gaat u akkoord met <bold><termsUrl>voorwaarden</termsUrl></bold> en <bold><privacyUrl>privacy</privacyUrl></bold>.",
+        "checkoutTitle": "Kassa"
+    },
+
+    "error": {
+        "general": "Algemene fout",
+        "shipments": "Bij sommige zendingen ontbreekt de verzendmethode",
+        "paymentMethod": "Betaling stap mag niet leeg zijn",
+        "transition": "Transitie is niet toegestaan",
+        "payer": "Betaler heeft de betaling niet goedgekeurd",
+        "resourceID": "Aangevraagde resource ID is niet gevonden"
+    },
+
+    "input":{
+        "cantBlank": "Mag niet leeg zijn",
+        "mustBeValidFormat": "Moet een geldig formaat zijn",
+        "mustBeValidEmail": "Voer een geldige e-mailadres in",
+        "mustBeValidCouponOrGiftCard": "Voer een geldige cadeaubon of coupon in",
+        "mustBeValidCoupon": "Voer een geldige coupon in",
+        "mustBeValidGiftCard": "Voer een geldige cadeaubon in"
+    },
+
+    "orderRecap": {
+        "order_summary": "Bestel overzicht",
+        "cartContains": "Uw winkelmand bevat {{count}} producten",
+        "cartContains_other": "Uw winkelmand bevat {{count}} producten",
+        "coupon_code": "Coupon code",
+        "gift_card_code": "Cadeaubon code",
+        "gift_card_or_coupon_code": "Cadeaubon code of coupon code",
+        "quantity": "HOEVEELHEID: {{count}}",
+        "quantity_other": "HOEVEELHEID: {{count}}",
+        "quantity_stock": "HOEVEELHEID: <0/>",
+        "discount_amount": "Korting",
+        "adjustment_amount": "Totale aanpassingen",
+        "giftcard_amount": "Cadeaukaart",
+        "tax_amount": "Belasting",
+        "tax_included_amount": "Belasting <style>inbegrepen</style>",
+        "shipping_amount": "Verzending",
+        "payment_method_amount": "Betaalmethode",
+        "subtotal_amount": "Subtotaal",
+        "total_amount": "Totaal",
+        "notSet": "Te berekenen",
+        "returnToCart": "Terug naar winkelmand"
+    },
+
+    "stepCustomer": {
+        "title": "Klant",
+        "addNewAddress": "Nieuw adres toevoegen",
+        "saveAddressBook": "Bewaar dit adres in uw account",
+        "continueToDelivery": "Doorgaan naar bezorging",
+        "notSet": "Vul uw factuur/verzend adres in",
+        "closeForm": "Kies adres"
+    },
+
+    "stepShipping": {
+        "title": "Bezorging",
+        "shipment": "Zending <Wrap>{{current}} van {{total}}</Wrap>",
+        "notAvailable": "De ingevoerde bestemming ligt buiten onze verzendzone. Wijzig uw verzendadres of neem contact met ons op voor hulp",
+        "outOfStock": "Een product in uw bestelling is niet meer beschikbaar",
+        "outOfStockWithCart": " Klik <WrapperStyle><Link>{{link}}</Link></WrapperStyle> om uw winkelmand te bewerken.",
+        "outOfStockLink": "hier",
+        "stockTransfer": "<0/> of <1/> producten zullen een overdracht ondergaan",
+        "methodSelected": "Uw bestelling bevat {{count}} zendingen",
+        "methodSelected_other": "Uw bestelling bevat {{count}} zendingen",
+        "methodUnselected": "Selecteer een verzendmethode",
+        "deliveryLeadTime" : "<0/> - <1/> dagen",
+        "continueToPayment": "Doorgaan naar betalen",
+        "notRequired": "Deze bestelling vereist geen verzending"
+    },
+
+    "stepPayment": {
+        "title": "Betaling",
+        "methodUnselected": "Kies een betaalmethode",
+        "creditCard": "Creditcard",
+        "wireTransfer": "Bankoverschrijving",
+        "wireTransferDescription": "Na bevestiging van de bestelling ontvangt u instructies om de betaling te voltooien",
+        "paypalDescription": "Na het plaatsen van de bestelling wordt u doorgestuurd naar PayPal om de betaling te autoriseren",
+        "endingIn": "<0/> eindigend in <1/>",
+        "submit": "Plaats bestelling",
+        "notRequired": "Deze bestelling vereist geen betaling",
+        "amountZero": "Het totale bedrag van de bestelling is nul, u kunt de bestelling nu plaatsen",
+        "saveToWallet": "Bewaar nieuwe kaart in uw portemonnee",
+        "expires": "Verloopt"
+    },
+
+    "addressForm" : {
+        "customer_email" : "Uw e-mailadres",
+        "billing_address_title": "Factuuradres",
+        "billing_address_first_name": "Voornaam",
+        "billing_address_last_name": "Achternaam",
+        "billing_address_line_1": "Adresregel 1",
+        "billing_address_line_2": "Adresregel 2",
+        "billing_address_city": "Stad",
+        "billing_address_country_code_placeholder": "Selecteer een land/regio",
+        "billing_address_country_code": "Land/Regio",
+        "billing_address_state_code": "Provincie/Staat",
+        "billing_address_state_code_placeholder": "Selecteer een provincie/staat",
+        "billing_address_zip_code": "Postcode",
+        "billing_address_phone": "Telefoon",
+        "billing_address_billing_info": "Factureringsinformatie",
+        "ship_to_different_address": "Verzend naar een ander adres",
+        "shipping_address_title": "Verzend adres",
+        "shipping_address_first_name": "Voornaam",
+        "shipping_address_last_name": "Achternaam",
+        "shipping_address_line_1": "Adresregel 1",
+        "shipping_address_line_2": "Adresregel 2",
+        "shipping_address_city": "Stad",
+        "shipping_address_country_code": "Land/Regio",
+        "shipping_address_country_code_placeholder": "Selecteer een land/regio",
+        "shipping_address_state_code": "Provincie/Staat",
+        "shipping_address_state_code_placeholder": "Selecteer een provincie/staat",
+        "shipping_address_zip_code": "Postcode",
+        "shipping_address_phone": "Telefoon"
+    },
+
+    "stepComplete": {
+        "title": "Bedankt voor uw bestelling!",
+        "description": "Bestelbevestiging nummer: <WrapperOrderId>#{{orderNumber}}</WrapperOrderId>",
+        "continue": "Doorgaan met winkelen",
+        "supportEmail": "Voor vragen kunt u ons een e-mail sturen op <br /><WrapperStyle><WrapperEmail>{{email}}</WrapperEmail></WrapperStyle>",
+        "supportPhone": "Voor vragen kunt u ons bellen op <br /><WrapperStyle><WrapperPhone>{{phone}}</WrapperPhone></WrapperStyle>",
+        "fullSupport": "Voor vragen kunt u ons een e-mail sturen op <br /><WrapperStyle><WrapperEmail>{{email}}</WrapperEmail></WrapperStyle> of bellen <WrapperStyle><WrapperPhone>{{phone}}</WrapperPhone></WrapperStyle>",
+        "ship_to": "Verzonden naar:",
+        "billed_to": "Gefactureerd aan:",
+        "payment": "Betaling:",
+        "summary_title": "Overzicht",
+        "customer_title": "Klant",
+        "email": "E-mail:",
+        "free_payment": "Deze bestelling vereiste geen betaling"
+    }
+
+}
