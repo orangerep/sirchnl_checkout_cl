@@ -1,14 +1,14 @@
 import {
-  Errors,
-  AddressInput,
-  AddressCountrySelector,
-  AddressStateSelector,
-  ErrorComponentProps,
-  ResourceErrorType,
   AddressCountrySelectName,
+  AddressCountrySelector,
+  AddressInput,
   AddressInputName,
   AddressStateSelectName,
+  AddressStateSelector,
   BaseInputType,
+  ErrorComponentProps,
+  Errors,
+  ResourceErrorType,
 } from "@commercelayer/react-components"
 import { ChangeEvent, useContext, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -16,8 +16,8 @@ import styled from "styled-components"
 import tw from "twin.macro"
 
 import {
-  ShippingToggleProps,
   evaluateShippingToggle,
+  ShippingToggleProps,
 } from "components/composite/StepCustomer"
 import { AppContext } from "components/data/AppProvider"
 import { ErrorCss } from "components/ui/form/Error"
@@ -143,6 +143,10 @@ export const AddressInputGroup: React.FC<Props> = ({
             data-test-id={`input_${fieldName}`}
             name={fieldName as AddressStateSelectName}
             value={value}
+            // TODO: Extends props?
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            options={[{ label: "Netherlands", value: "NL" }]}
           />
           <Label htmlFor={fieldName}>{label}</Label>
         </>
@@ -197,6 +201,7 @@ const StyledAddressCountrySelector = styled(AddressCountrySelector)`
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' class='h-2 w-2' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z' clip-rule='evenodd' /%3E%3C/svg%3E");
     background-size: 1rem;
   }
+
   ${tw`disabled:bg-gray-50`}
 `
 
