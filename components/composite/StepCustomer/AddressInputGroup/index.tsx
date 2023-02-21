@@ -129,6 +129,10 @@ export const AddressInputGroup: React.FC<Props> = ({
               shippingCountryCodeLock &&
                 fieldName === "shipping_address_country_code"
             )}
+            // TODO: Extend props?
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            options={[{ label: "Netherlands", value: "NL" }]}
           />
           <Label htmlFor={fieldName}>{label}</Label>
         </>
@@ -143,10 +147,6 @@ export const AddressInputGroup: React.FC<Props> = ({
             data-test-id={`input_${fieldName}`}
             name={fieldName as AddressStateSelectName}
             value={value}
-            // TODO: Extends props?
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            options={[{ label: "Netherlands", value: "NL" }]}
           />
           <Label htmlFor={fieldName}>{label}</Label>
         </>
