@@ -36,9 +36,91 @@ test.describe("guest with Braintree", () => {
     await checkoutPage.selectPayment("braintree")
 
     const element = await checkoutPage.page.locator(
-      "[data-test-id=payment-save-wallet]"
+      "[data-testid=payment-save-wallet]"
     )
     expect(element).not.toBeVisible()
+
+    await checkoutPage.setPayment("braintree")
+
+    await checkoutPage.save("Payment", undefined, true)
+
+    const cardinalFrame = checkoutPage.page.frameLocator(
+      "text=<head></head> <body> <div></div> </body>"
+    )
+    await cardinalFrame
+      .locator('[placeholder="\\ Enter\\ Code\\ Here"]')
+      .fill("1234")
+
+    await cardinalFrame.locator("text=SUBMIT").click()
+
+    await checkoutPage.page
+      .locator(`text=Thank you for your order!`)
+      .waitFor({ state: "visible", timeout: 100000 })
+
+    await checkoutPage.checkPaymentRecap("Visa ending in 0004")
+    await checkoutPage.page.reload()
+    await checkoutPage.checkPaymentRecap("Visa ending in 0004")
+  })
+
+  test("Checkout order with no 3DS", async ({ checkoutPage }) => {
+    await checkoutPage.checkOrderSummary("Order Summary")
+
+    await checkoutPage.checkStep("Shipping", "open")
+
+    await checkoutPage.selectShippingMethod({ text: "Standard Shipping" })
+
+    await checkoutPage.save("Shipping")
+
+    await checkoutPage.selectPayment("braintree")
+
+    const element = await checkoutPage.page.locator(
+      "[data-testid=payment-save-wallet]"
+    )
+    expect(element).not.toBeVisible()
+
+    await checkoutPage.setPayment("braintree", { number: "4000000000001000" })
+
+    await checkoutPage.save("Payment")
+
+    // const cardinalFrame = checkoutPage.page.frameLocator(
+    //   "text=<head></head> <body> <div></div> </body>"
+    // )
+    // await cardinalFrame
+    //   .locator('[placeholder="\\ Enter\\ Code\\ Here"]')
+    //   .fill("1234")
+
+    // await cardinalFrame.locator("text=SUBMIT").click()
+
+    // await checkoutPage.page
+    //   .locator(`text=Thank you for your order!`)
+    //   .waitFor({ state: "visible", timeout: 100000 })
+
+    await checkoutPage.checkPaymentRecap("Visa ending in 1000")
+    await checkoutPage.page.reload()
+    await checkoutPage.checkPaymentRecap("Visa ending in 1000")
+  })
+
+  test("Checkout order with refresh after selecting the payment", async ({
+    checkoutPage,
+  }) => {
+    await checkoutPage.checkOrderSummary("Order Summary")
+
+    await checkoutPage.checkStep("Shipping", "open")
+
+    await checkoutPage.selectShippingMethod({ text: "Standard Shipping" })
+
+    await checkoutPage.save("Shipping")
+
+    await checkoutPage.selectPayment("braintree")
+
+    const element = await checkoutPage.page.locator(
+      "[data-testid=payment-save-wallet]"
+    )
+    expect(element).not.toBeVisible()
+
+    await checkoutPage.page.reload()
+
+    await checkoutPage.checkStep("Payment", "open")
 
     await checkoutPage.setPayment("braintree")
 
@@ -101,7 +183,7 @@ test.describe("customer with Braintree without saving", () => {
     await checkoutPage.selectPayment("braintree")
 
     const element = await checkoutPage.page.locator(
-      "[data-test-id=payment-save-wallet]"
+      "[data-testid=payment-save-wallet]"
     )
     await expect(element).toBeVisible()
     await expect(element).not.toBeChecked()
@@ -161,7 +243,7 @@ test.describe("customer with Braintree with saving", () => {
     await checkoutPage.selectPayment("braintree")
 
     const element = await checkoutPage.page.locator(
-      "[data-test-id=payment-save-wallet]"
+      "[data-testid=payment-save-wallet]"
     )
     await expect(element).toBeVisible()
     await expect(element).not.toBeChecked()

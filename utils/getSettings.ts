@@ -1,4 +1,5 @@
-import { TypeAccepted } from "@commercelayer/react-components/lib/utils/getLineItemsCount"
+import { jwtDecode, jwtIsSalesChannel } from "@commercelayer/js-auth"
+import { getConfig } from "@commercelayer/organization-config"
 import CommerceLayer, {
   CommerceLayerStatic,
   CommerceLayerClient,
@@ -6,23 +7,14 @@ import CommerceLayer, {
   Order,
 } from "@commercelayer/sdk"
 import retry from "async-retry"
-import jwt_decode from "jwt-decode"
 
-import { LINE_ITEMS_SHOPPABLE } from "components/utils/constants"
-import hex2hsl, { BLACK_COLOR } from "components/utils/hex2hsl"
+import { TypeAccepted } from "components/data/AppProvider/utils"
+import {
+  LINE_ITEMS_SHIPPABLE,
+  LINE_ITEMS_SHOPPABLE,
+} from "components/utils/constants"
 
 const RETRIES = 2
-
-interface JWTProps {
-  organization: {
-    slug: string
-    id: string
-  }
-  application: {
-    kind: string
-  }
-  test: boolean
-}
 
 interface FetchResource<T> {
   object: T | undefined
@@ -65,13 +57,13 @@ async function retryCall<T>(
   )
 }
 
-async function getOrganization(
+function getOrganization(
   cl: CommerceLayerClient
 ): Promise<FetchResource<Organization> | undefined> {
   return retryCall<Organization>(() =>
     cl.organization.retrieve({
       fields: {
-        organizations: [
+        organization: [
           "id",
           "logo_url",
           "name",
@@ -81,13 +73,14 @@ async function getOrganization(
           "gtm_id_test",
           "support_email",
           "support_phone",
+          "config",
         ],
       },
     })
   )
 }
 
-async function getOrder(
+function getOrder(
   cl: CommerceLayerClient,
   orderId: string
 ): Promise<FetchResource<Order> | undefined> {
@@ -105,22 +98,34 @@ async function getOrder(
           "privacy_url",
           "line_items",
         ],
-        line_items: ["item_type"],
+        line_items: ["item_type", "item"],
       },
-      include: ["line_items"],
+      include: ["line_items", "line_items.item"],
     })
   )
 }
 
 function getTokenInfo(accessToken: string) {
   try {
-    const {
-      organization: { slug },
-      application: { kind },
-      test,
-    } = jwt_decode(accessToken) as JWTProps
+    const { payload } = jwtDecode(accessToken)
 
-    return { slug, kind, isTest: test }
+    if (jwtIsSalesChannel(payload)) {
+      const {
+        organization: { slug },
+        application: { kind },
+        owner,
+        test,
+      } = payload
+      return {
+        slug,
+        kind,
+        isTest: test,
+        isGuest: !owner,
+        marketId: payload.market?.id[0],
+      }
+    } else {
+      return {}
+    }
   } catch (e) {
     console.log(`error decoding access token: ${e}`)
     return {}
@@ -155,7 +160,7 @@ export const getSettings = async ({
     return invalidateCheckout()
   }
 
-  const { slug, kind, isTest } = getTokenInfo(accessToken)
+  const { slug, kind, isTest, isGuest, marketId } = getTokenInfo(accessToken)
 
   if (!slug) {
     return invalidateCheckout()
@@ -169,11 +174,14 @@ export const getSettings = async ({
 
   const cl = CommerceLayer({
     organization: slug,
-    accessToken: accessToken,
+    accessToken,
     domain,
   })
 
-  const organizationResource = await getOrganization(cl)
+  const [organizationResource, orderResource] = await Promise.all([
+    getOrganization(cl),
+    getOrder(cl, orderId),
+  ])
 
   const organization = organizationResource?.object
 
@@ -182,7 +190,6 @@ export const getSettings = async ({
     return invalidateCheckout(true)
   }
 
-  const orderResource = await getOrder(cl, orderId)
   const order = orderResource?.object
 
   if (!orderResource?.success || !order?.id) {
@@ -200,17 +207,21 @@ export const getSettings = async ({
     return invalidateCheckout()
   }
 
+  const isShipmentRequired = (order.line_items || []).some(
+    (line_item) =>
+      LINE_ITEMS_SHIPPABLE.includes(line_item.item_type as TypeAccepted) &&
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      !line_item.item?.do_not_ship
+  )
+
   if (order.status === "draft" || order.status === "pending") {
-    // If returning from payment (PayPal) skip order refresh and payment_method reset
-    console.log(
-      !paymentReturn ? "refresh order" : "return from external payment"
-    )
-    if (!paymentReturn) {
-      const _refresh = !paymentReturn
+    // Logic to refresh the order is documented here: https://github.com/commercelayer/mfe-checkout/issues/356
+    if (!paymentReturn && (!order.autorefresh || (!isGuest && order.guest))) {
       try {
         await cl.orders.update({
           id: order.id,
-          _refresh,
+          _refresh: true,
           payment_method: cl.payment_methods.relationship(null),
           ...(!order.autorefresh && { autorefresh: true }),
         })
@@ -225,15 +236,17 @@ export const getSettings = async ({
   const appSettings: CheckoutSettings = {
     accessToken,
     endpoint: `https://${slug}.${domain}`,
+    isGuest: !!isGuest,
     domain,
     slug,
-    orderNumber: order.number || 0,
+    orderNumber: order.number || "",
     orderId: order.id,
+    isShipmentRequired,
     validCheckout: true,
     logoUrl: organization.logo_url,
     companyName: organization.name || "Test company",
     language: order.language_code || "en",
-    primaryColor: hex2hsl(organization.primary_color as string) || BLACK_COLOR,
+    primaryColor: organization.primary_color || "#000000",
     favicon:
       organization.favicon_url ||
       "https://data.commercelayer.app/assets/images/favicons/favicon-32x32.png",
@@ -242,6 +255,15 @@ export const getSettings = async ({
     supportPhone: organization.support_phone,
     termsUrl: order.terms_url,
     privacyUrl: order.privacy_url,
+    config: getConfig({
+      jsonConfig: organization.config ?? {},
+      market: `market:id:${marketId}`,
+      params: {
+        lang: order.language_code,
+        orderId: order.id,
+        accessToken,
+      },
+    }),
   }
 
   return appSettings

@@ -37,7 +37,7 @@
         "cartContains_plural": "Dein Einkaufswagen enthält {{count}} Artikel.",
         "coupon_code": "Rabattcode",
         "gift_card_code": "Geschenkkarte",
-        "gift_card_or_coupon_code": "Geschenkkarte oder Rabattcode" ,
+        "gift_card_or_coupon_code": "Geschenkkarte oder Rabattcode",
         "quantity": "Anzahl: {{count}}",
         "quantity_other": "Anzahl: {{count}}",
         "quantity_stock": "Anzahl: <0/>",
@@ -51,15 +51,29 @@
         "subtotal_amount": "Zwischensumme",
         "total_amount": "Summe",
         "notSet": "Zu berechnen",
-        "returnToCart": "Zurück zum Warenkorb"
+        "returnToCart": "Zurück zum Warenkorb",
+        "frequency.hourly": "Hourly",
+        "frequency.daily": "Daily",
+        "frequency.weekly": "Weekly",
+        "frequency.monthly": "Monthly",
+        "frequency.two-months": "Every two months",
+        "frequency.two-month": "Every two months",
+        "frequency.three-months": "Every three months",
+        "frequency.three-month": "Every three months",
+        "frequency.four-months": "Every four months",
+        "frequency.four-month": "Every four months",
+        "frequency.six-months": "Every six months",
+        "frequency.six-month": "Every six months",
+        "frequency.yearly": "Yearly"
     },
   
     "stepCustomer": {
-        "title": "Kunde",
+        "title": "Adresse",
         "addNewAddress": "Neue Adresse hinzufügen",
         "saveAddressBook": "Speichere diese Adresse in Deinem Konto",
         "continueToDelivery": "Weiter zum Versand",
         "notSet": "Gib Deine Rechnungs- / Lieferadresse ein",
+        "notSetNoDelivery": "Gib Seine Rechnungsadresse ein",
         "closeForm": "Adresse auswählen"
     },
   
@@ -75,6 +89,7 @@
         "methodSelected_other": "Deine Bestellung besteht aus {{count}} Sendungen.",
         "methodUnselected": "Wähle eine Versandart",
         "deliveryLeadTime": "<0/> - <1/> Tage",
+        "externalPrice": "At next step",
         "continueToPayment": "Weiter zur Zahlung",
         "notRequired": "Diese Bestellung erfordert keinen Versand"
     },
@@ -82,16 +97,18 @@
     "stepPayment": {
         "title": "Zahlung",
         "methodUnselected": "Wähle eine Zahlungsmethode",
-        "creditCard": "Kreditkarte",
+        "creditCard": "Zahlungsarten",
         "wireTransfer": "Banküberweisung",
-        "wireTransferDescription": "Nachdem Du die Bestellung aufgegeben hast, musst Du die Zahlung manuell mit Deiner Bank abwickeln.",
+        "wireTransferDescription": "Nach Abschluss der Bestellung übersenden wir Ihnen die Daten für eine vorab Banküberweisung.",
         "paypalDescription": "Nach der Bestellung wirst Du auf die PayPal-Website weitergeleitet, um Dich anzumelden und die Zahlung zu autorisieren.",
         "endingIn": "<0/> endet mit <1/>",
         "submit": "Jetzt bestellen",
         "notRequired": "Diese Bestellung erfordert keine Zahlung",
         "amountZero": "Der Gesamtbetrag der Bestellung ist Null. Du kannst die Bestellung so aufgeben, wie sie jetzt ist",
         "saveToWallet": "Speichere eine neue Karte",
-        "expires": "Ablaufdatum"
+        "expires": "Ablaufdatum",
+        "subscriptionWithoutCustomer": "An account must be created in order to purchase your subscription.",
+        "subscriptionWithCustomer": "By providing your card information, you allow the company to charge your card for future payments in accordance with their terms."
     },
   
     "addressForm": {
@@ -99,8 +116,8 @@
         "billing_address_title": "Rechnungsadresse",
         "billing_address_first_name": "Vorname",
         "billing_address_last_name": "Nachname",
-        "billing_address_line_1": "Erste Adresszeile",
-        "billing_address_line_2": "Zweite Adresszeile",
+        "billing_address_line_1": "Straße + Hausnummer",
+        "billing_address_line_2": "Weitere Adressangaben",
         "billing_address_city": "Stadt",
         "billing_address_country_code_placeholder": "Wähle ein Land",
         "billing_address_country_code": "Land",
@@ -113,8 +130,8 @@
         "shipping_address_title": "Lieferadresse",
         "shipping_address_first_name": "Vorname",
         "shipping_address_last_name": "Nachname",
-        "shipping_address_line_1": "Erste Adresszeile",
-        "shipping_address_line_2": "Zweite Adresszeile",
+        "shipping_address_line_1": "Straße + Hausnummer",
+        "shipping_address_line_2": "Weitere Adressangaben",
         "shipping_address_city": "Stadt",
         "shipping_address_country_code": "Land",
         "shipping_address_country_code_placeholder": "Wähle ein Land",

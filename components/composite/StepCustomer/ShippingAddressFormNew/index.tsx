@@ -4,14 +4,25 @@ import styled from "styled-components"
 import tw from "twin.macro"
 
 import { AddressInputGroup } from "components/composite/StepCustomer/AddressInputGroup"
+import { useSettingsOrInvalid } from "components/hooks/useSettingsOrInvalid"
 
 interface Props {
-  shippingAddress?: Address
+  shippingAddress: NullableType<Address>
 }
 
 export const ShippingAddressFormNew: React.FC<Props> = ({
   shippingAddress,
 }: Props) => {
+  const { settings } = useSettingsOrInvalid()
+
+  if (!settings) {
+    return null
+  }
+
+  const countries = settings?.config?.checkout?.shipping_countries
+  const states = settings?.config?.checkout?.shipping_states
+  const defaultCountry = settings?.config?.checkout?.default_country
+
   return (
     <Fragment>
       <Grid>
@@ -56,6 +67,9 @@ export const ShippingAddressFormNew: React.FC<Props> = ({
         <AddressInputGroup
           fieldName="shipping_address_country_code"
           resource="shipping_address"
+          // @ts-expect-error missing type
+          countries={countries}
+          defaultCountry={defaultCountry}
           type="text"
           value={shippingAddress?.country_code || ""}
         />
@@ -65,6 +79,8 @@ export const ShippingAddressFormNew: React.FC<Props> = ({
         <AddressInputGroup
           fieldName="shipping_address_state_code"
           resource="shipping_address"
+          // @ts-expect-error missing type
+          states={states}
           type="text"
           value={shippingAddress?.state_code || ""}
         />

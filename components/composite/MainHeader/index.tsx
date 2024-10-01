@@ -1,10 +1,10 @@
-import { TotalAmount } from "@commercelayer/react-components"
+import TotalAmount from "@commercelayer/react-components/orders/TotalAmount"
 import { useTranslation } from "react-i18next"
 import styled from "styled-components"
 import tw from "twin.macro"
 
 interface Props {
-  orderNumber: number
+  orderNumber: string
 }
 
 export const MainHeader: React.FC<Props> = ({ orderNumber }) => {

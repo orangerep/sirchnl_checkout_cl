@@ -1,16 +1,18 @@
 import {
-  getCustomerToken,
-  getIntegrationToken,
-  getSalesChannelToken,
+  createAssertion,
+  authenticate,
+  jwtDecode,
+  jwtIsSalesChannel,
 } from "@commercelayer/js-auth"
-import CommerceLayer, {
+import { type Configs } from "@commercelayer/organization-config"
+import {
+  CommerceLayer,
   CommerceLayerClient,
   Address,
   AddressCreate,
 } from "@commercelayer/sdk"
-import { chromium, test as base } from "@playwright/test"
+import { test as base } from "@playwright/test"
 import dotenv from "dotenv"
-import jwt_decode from "jwt-decode"
 
 import path from "path"
 
@@ -30,7 +32,9 @@ type OrderType =
 interface BaseLineItemObject {
   quantity: number
   inventory?: number
+  frequency?: string
   sku_options?: Array<Record<string, string | object>>
+  final_quantity?: number
 }
 
 interface SkuItem extends BaseLineItemObject {
@@ -50,18 +54,12 @@ interface GiftCardProps {
   apply?: boolean
 }
 
-interface JWTProps {
-  owner: {
-    id: string
-  }
-}
-
 interface DefaultParamsProps {
   incognito?: boolean
   token?: string
   orderId?: string
   order?: OrderType
-  market?: string
+  market?: "EU" | "US" | "MI"
   customer?: {
     email: string
     password: string
@@ -70,9 +68,10 @@ interface DefaultParamsProps {
     support_phone?: string
     support_email?: string
     gtm_id_test?: string
+    config?: { mfe: Configs }
   }
   orderAttributes?: {
-    language_code?: "en" | "it"
+    language_code?: "en" | "it" | "it-IT"
     customer_email?: string
     shipping_country_code_lock?: "IT" | "GB" | "US"
     terms_url?: string
@@ -99,17 +98,37 @@ type FixtureType = {
   defaultParams: DefaultParamsProps
 }
 
-const getToken = async (market?: string) => {
-  const clientId = process.env.E2E_CLIENT_ID as string
-  const endpoint = process.env.E2E_ENDPOINT as string
-  const scope = market || (process.env.E2E_MARKET_ID as string)
+const getToken = async (market?: "US" | "EU" | "MI", customerId?: string) => {
+  const scope = market != null ? `market:code:${market}` : "market:code:EU"
 
-  const data = await getSalesChannelToken({
-    clientId,
-    endpoint,
-    scope,
-  })
-  return data?.accessToken as string
+  if (customerId == null) {
+    return (
+      await authenticate("client_credentials", {
+        domain: process.env.NEXT_PUBLIC_DOMAIN as string,
+        clientId: process.env.E2E_CLIENT_ID as string,
+        scope,
+      })
+    ).accessToken
+  } else {
+    return (
+      await authenticate("urn:ietf:params:oauth:grant-type:jwt-bearer", {
+        domain: process.env.NEXT_PUBLIC_DOMAIN as string,
+        clientId: process.env.E2E_CLIENT_ID as string,
+        clientSecret: process.env.E2E_CLIENT_SECRET as string,
+        scope,
+        assertion: await createAssertion({
+          payload: {
+            "https://commercelayer.io/claims": {
+              owner: {
+                type: "Customer",
+                id: customerId,
+              },
+            },
+          },
+        }),
+      })
+    ).accessToken
+  }
 }
 
 const getCustomerUserToken = async ({
@@ -120,7 +139,8 @@ const getCustomerUserToken = async ({
   password: string
 }) => {
   const token = await getSuperToken()
-  const cl = await getClient(token)
+  const cl = getClient(token)
+  let customerId
   const existingUser = await cl.customers.list({
     filters: {
       email_eq: email,
@@ -128,38 +148,24 @@ const getCustomerUserToken = async ({
   })
 
   if (existingUser.length === 0) {
-    await cl.customers.create({ email, password })
+    customerId = (await cl.customers.create({ email, password })).id
+  } else {
+    customerId = existingUser[0].id
   }
-  const clientId = process.env.E2E_CLIENT_ID as string
-  const endpoint = process.env.E2E_ENDPOINT as string
-  const scope = process.env.E2E_MARKET_ID as string
 
-  const data = await getCustomerToken(
-    {
-      clientId,
-      endpoint,
-      scope,
-    },
-    {
-      username: email,
-      password: password,
-    }
-  )
-  return data?.accessToken as string
+  const scope = "EU"
+
+  return getToken(scope, customerId)
 }
 
 const getSuperToken = async () => {
-  const clientId = process.env.E2E_INTEGRATION_CLIENT_ID as string
-  const clientSecret = process.env.E2E_INTEGRATION_CLIENT_SECRET as string
-  const endpoint = process.env.E2E_ENDPOINT as string
-  const scope = process.env.E2E_MARKET_ID as string
-  const data = await getIntegrationToken({
-    clientId,
-    clientSecret,
-    endpoint,
-    scope,
+  const token = await authenticate("client_credentials", {
+    domain: process.env.NEXT_PUBLIC_DOMAIN as string,
+    clientId: process.env.E2E_INTEGRATION_CLIENT_ID as string,
+    clientSecret: process.env.E2E_INTEGRATION_CLIENT_SECRET as string,
   })
-  return data?.accessToken as string
+
+  return token.accessToken
 }
 
 const getOrder = async (
@@ -191,7 +197,7 @@ const getOrder = async (
 
       if (noStock && noStock.length > 0) {
         superToken = await getSuperToken()
-        superCl = await getClient(superToken)
+        superCl = getClient(superToken)
         await updateInventory(superCl, noStock, "quantity")
       }
       await createLineItems({
@@ -201,14 +207,14 @@ const getOrder = async (
       })
       if (noStock && noStock.length > 0) {
         superToken = await getSuperToken()
-        superCl = await getClient(superToken)
+        superCl = getClient(superToken)
         await updateInventory(superCl, noStock, "inventory")
       }
 
       if (giftCard) {
         superToken = superToken || (await getSuperToken())
-        superCl = superCl || (await getClient(superToken))
-        const card = await createAndPurchaseGiftCard(cl, giftCard)
+        superCl = superCl || getClient(superToken)
+        const card = await createAndPurchaseGiftCard(cl, giftCard, true)
         const activeCard = await superCl.gift_cards.update({
           id: card.id,
           _activate: true,
@@ -258,23 +264,27 @@ const getOrder = async (
           email: params.customer.email,
           password: params.customer.password,
         })
-        const customerCl = await getClient(token)
-        const {
-          owner: { id },
-        } = jwt_decode(token) as JWTProps
+        const customerCl = getClient(token)
+        const { payload } = jwtDecode(token)
 
         const promises = params.customerAddresses.map(async (address) => {
           const a = await customerCl.addresses.create({
             ...address,
           } as AddressCreate)
-          await customerCl.addresses.update({
-            id: a.id,
-            reference: a.id,
-          })
-          return customerCl.customer_addresses.create({
-            customer: customerCl.customers.relationship(id),
-            address: customerCl.addresses.relationship(a),
-          })
+          if (jwtIsSalesChannel(payload)) {
+            // @ts-expect-error no customer_email needed
+            const ca = await customerCl.customer_addresses.create({
+              customer: customerCl.customers.relationship(
+                payload.owner?.id as string
+              ),
+              address: customerCl.addresses.relationship(a),
+            })
+            await customerCl.addresses.update({
+              id: a.id,
+              reference: ca.id,
+            })
+            return ca
+          }
         })
         await Promise.all(promises)
       }
@@ -374,7 +384,8 @@ const updateInventory = async (
 
 const createAndPurchaseGiftCard = async (
   cl: CommerceLayerClient,
-  props?: GiftCardProps
+  props?: GiftCardProps,
+  purchase: boolean = false
 ) => {
   const card = await cl.gift_cards.create({
     currency_code: props?.currency_code ? props.currency_code : "EUR",
@@ -385,12 +396,12 @@ const createAndPurchaseGiftCard = async (
   })
   const activeCard = await cl.gift_cards.update({
     id: card.id,
-    _purchase: true,
+    _purchase: purchase,
   })
   return activeCard
 }
 
-const getClient = async (token: string) => {
+const getClient = (token: string) => {
   return CommerceLayer({
     organization: process.env.NEXT_PUBLIC_SLUG as string,
     accessToken: token,
@@ -408,7 +419,8 @@ const createLineItems = async ({
   items: Array<LineItemObject>
 }) => {
   const lineItems = items.map((item) => {
-    const { sku_options, inventory, ...tail } = item
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { sku_options, inventory, final_quantity, ...tail } = item
     const lineItem = {
       ...tail,
       order: cl.orders.relationship(orderId),
@@ -443,9 +455,34 @@ const createLineItems = async ({
     await Promise.all(
       lineItemsOptions.filter((item) => item !== undefined).flat(2)
     )
+
+    // update line_items with final_quantity
+    const updateLineItems = items.map((item) => {
+      if (
+        isSkuItem(item) &&
+        item.final_quantity !== undefined &&
+        item.final_quantity > 0
+      ) {
+        const toUpdate = lineItemsCreated.find(
+          (i) => i.sku_code === item.sku_code
+        )
+        if (toUpdate) {
+          return cl.line_items.update({
+            id: toUpdate.id,
+            quantity: item.final_quantity,
+          })
+        }
+      }
+      return null
+    })
+    await Promise.all(updateLineItems)
   } catch (e) {
     console.log(e)
   }
+}
+
+function isSkuItem(item: SkuItem | BundleItem): item is SkuItem {
+  return (item as SkuItem).final_quantity !== undefined
 }
 
 const createDefaultLineItem = async (
@@ -469,13 +506,19 @@ export const test = base.extend<FixtureType>({
     const token = await (defaultParams.customer
       ? getCustomerUserToken(defaultParams.customer)
       : getToken(defaultParams.market))
-    const cl = await getClient(token)
+
+    const cl = getClient(token)
     const { orderId, attributes } = await getOrder(cl, defaultParams)
-    const checkoutPage = new CheckoutPage(page, attributes)
     const id =
       defaultParams.orderId === undefined ? orderId : defaultParams.orderId
     const accessToken =
       defaultParams.token === undefined ? token : defaultParams.token
+
+    const checkoutPage = new CheckoutPage(page, {
+      ...attributes,
+      accessToken,
+      orderId: id,
+    })
 
     await checkoutPage.goto({
       orderId: id,

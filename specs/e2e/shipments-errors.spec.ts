@@ -19,7 +19,7 @@ test.describe("no shipping zone with cart url", () => {
       addresses: {
         billingAddress: {
           ...usAddress,
-          billing_info: faker.random.alphaNumeric(11),
+          billing_info: faker.string.alphanumeric(11),
         },
         sameShippingAddress: true,
       },
@@ -138,7 +138,7 @@ test.describe("no shipping zone and one out of stock", () => {
       addresses: {
         billingAddress: {
           ...usAddress,
-          billing_info: faker.random.alphaNumeric(11),
+          billing_info: faker.string.alphanumeric(11),
         },
         sameShippingAddress: true,
       },
@@ -160,7 +160,7 @@ test.describe("with single shipping method, not shippable", () => {
   test.use({
     defaultParams: {
       order: "with-items",
-      market: process.env.E2E_MARKET_ID_SINGLE_SHIPPING_METHOD,
+      market: "US",
       lineItemsAttributes: [
         { sku_code: "CANVASAU000000FFFFFF1824", quantity: 1 },
         { sku_code: "SOCKXXMUE63E74FFFFFFLXXX", quantity: 1 },
@@ -202,7 +202,7 @@ test.describe("no shipping zone", () => {
       addresses: {
         billingAddress: {
           ...usAddress,
-          billing_info: faker.random.alphaNumeric(11),
+          billing_info: faker.string.alphanumeric(11),
         },
         sameShippingAddress: true,
       },

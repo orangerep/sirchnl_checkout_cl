@@ -1,30 +1,34 @@
-import { TypeAccepted } from "@commercelayer/react-components/lib/utils/getLineItemsCount"
-import CommerceLayer, { LineItem } from "@commercelayer/sdk"
-import { createContext, useEffect, useContext } from "react"
+import { LineItem, Order } from "@commercelayer/sdk"
+import { createContext, useEffect, useContext, useRef } from "react"
 import TagManager from "react-gtm-module"
 
 import { AppContext } from "components/data/AppProvider"
+import type { TypeAccepted } from "components/data/AppProvider/utils"
 import { LINE_ITEMS_SHOPPABLE } from "components/utils/constants"
 
 import { DataLayerItemProps, DataLayerProps } from "./typings"
 
 interface GTMProviderData {
-  fireAddShippingInfo: () => Promise<void>
-  fireAddPaymentInfo: () => Promise<void>
-  firePurchase: () => Promise<void>
+  fireAddShippingInfo: (order: Order) => void
+  fireAddPaymentInfo: () => void
+  firePurchase: () => void
 }
 
 export const GTMContext = createContext<GTMProviderData | null>(null)
 
 interface GTMProviderProps {
   children: React.ReactNode
-  gtmId?: string
+  gtmId: NullableType<string>
+  skipBeginCheckout: boolean
 }
 
 export const GTMProvider: React.FC<GTMProviderProps> = ({
   children,
   gtmId,
+  skipBeginCheckout,
 }) => {
+  const isFirstLoading = useRef(true)
+
   if (!gtmId) {
     return <>{children}</>
   }
@@ -34,20 +38,17 @@ export const GTMProvider: React.FC<GTMProviderProps> = ({
     return <>{children}</>
   }
 
-  const { accessToken, orderId, slug, domain, getOrderFromRef } = ctx
-
-  const cl = CommerceLayer({
-    organization: slug,
-    accessToken: accessToken,
-    domain,
-  })
+  const { order } = ctx
 
   useEffect(() => {
-    if (gtmId) {
-      TagManager.initialize({ gtmId: gtmId })
-      fireBeginCheckout()
+    if (isFirstLoading.current && gtmId != null && order != null) {
+      isFirstLoading.current = false
+      TagManager.initialize({ gtmId })
+      if (!skipBeginCheckout) {
+        fireBeginCheckout(order)
+      }
     }
-  }, [])
+  }, [order])
 
   const pushDataLayer = ({ eventName, dataLayer }: DataLayerProps) => {
     try {
@@ -75,29 +76,12 @@ export const GTMProvider: React.FC<GTMProviderProps> = ({
       item_name: name,
       price: total_amount_float,
       currency: currency_code,
-      quantity: quantity,
+      quantity,
     }
   }
 
-  const fireBeginCheckout = async () => {
-    const order = await getOrderFromRef()
-    const lineItems = (
-      await cl.orders.retrieve(orderId, {
-        include: ["line_items"],
-        fields: {
-          orders: ["line_items"],
-          line_items: [
-            "sku_code",
-            "bundle_code",
-            "name",
-            "total_amount_float",
-            "currency_code",
-            "quantity",
-            "item_type",
-          ],
-        },
-      })
-    ).line_items?.filter((line_item) => {
+  const fireBeginCheckout = (order: Order) => {
+    const lineItems = order.line_items?.filter((line_item) => {
       return LINE_ITEMS_SHOPPABLE.includes(line_item.item_type as TypeAccepted)
     })
 
@@ -112,34 +96,11 @@ export const GTMProvider: React.FC<GTMProviderProps> = ({
     })
   }
 
-  const fireAddShippingInfo = async () => {
-    const order = await getOrderFromRef()
-    const shipments = (
-      await cl.orders.retrieve(orderId, {
-        include: [
-          "shipments.shipping_method",
-          "shipments.shipment_line_items",
-          "shipments.shipment_line_items.line_item",
-        ],
-        fields: {
-          orders: ["shipments"],
-          shipments: ["shipping_method", "shipment_line_items"],
-          shipping_method: ["name", "price_amount_for_shipment_float"],
-          shipment_line_items: ["line_item"],
-          line_item: [
-            "sku_code",
-            "name",
-            "total_amount_float",
-            "currency_code",
-            "quantity",
-            "item_type",
-          ],
-        },
-      })
-    ).shipments
+  const fireAddShippingInfo = (order: Order) => {
+    const shipments = order?.shipments
 
-    shipments?.forEach(async (shipment) => {
-      const lineItems = shipment.shipment_line_items?.map(
+    shipments?.forEach((shipment) => {
+      const lineItems = shipment.stock_line_items?.map(
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         (e) => e && mapItemsToGTM(e.line_item)
@@ -158,13 +119,12 @@ export const GTMProvider: React.FC<GTMProviderProps> = ({
     })
   }
 
-  const fireAddPaymentInfo = async () => {
-    const order = await getOrderFromRef()
-    const lineItems = order.line_items?.filter((line_item) => {
+  const fireAddPaymentInfo = () => {
+    const lineItems = order?.line_items?.filter((line_item) => {
       return LINE_ITEMS_SHOPPABLE.includes(line_item.item_type as TypeAccepted)
     })
 
-    const paymentMethod = order.payment_method
+    const paymentMethod = order?.payment_method
 
     return pushDataLayer({
       eventName: "add_payment_info",
@@ -178,10 +138,8 @@ export const GTMProvider: React.FC<GTMProviderProps> = ({
     })
   }
 
-  const firePurchase = async () => {
-    const order = await getOrderFromRef()
-
-    const lineItems = order.line_items?.filter((line_item) => {
+  const firePurchase = () => {
+    const lineItems = order?.line_items?.filter((line_item) => {
       return LINE_ITEMS_SHOPPABLE.includes(line_item.item_type as TypeAccepted)
     })
 

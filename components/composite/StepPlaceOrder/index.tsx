@@ -1,5 +1,8 @@
+import type { Order } from "@commercelayer/sdk"
 import { useContext, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
+
+import { RepeatIcon } from "../OrderSummary/RepeatIcon"
 
 import { AppContext } from "components/data/AppProvider"
 import { GTMContext } from "components/data/GTMProvider"
@@ -19,11 +22,12 @@ import {
   StyledPrivacyAndTermsCheckbox,
   PlaceOrderButtonWrapper,
 } from "./styled"
+import { WarningIcon } from "./WarningIcon"
 
 interface Props {
   isActive: boolean
-  termsUrl?: string
-  privacyUrl?: string
+  termsUrl: NullableType<string>
+  privacyUrl: NullableType<string>
 }
 
 const StepPlaceOrder: React.FC<Props> = ({
@@ -44,13 +48,19 @@ const StepPlaceOrder: React.FC<Props> = ({
 
   const { placeOrder } = appCtx
 
-  const handlePlaceOrder = async ({ placed }: { placed: boolean }) => {
+  const handlePlaceOrder = async ({
+    placed,
+    order,
+  }: {
+    placed: boolean
+    order?: Order
+  }) => {
     if (placed) {
       setIsPlacingOrder(true)
-      await placeOrder()
+      await placeOrder(order)
       if (gtmCtx?.firePurchase && gtmCtx?.fireAddPaymentInfo) {
-        await gtmCtx.fireAddPaymentInfo()
-        await gtmCtx.firePurchase()
+        gtmCtx.fireAddPaymentInfo()
+        gtmCtx.firePurchase()
       }
       setIsPlacingOrder(false)
     }
@@ -58,7 +68,30 @@ const StepPlaceOrder: React.FC<Props> = ({
 
   return (
     <>
-      <ErrorsContainer data-test-id="errors-container">
+      {appCtx.hasSubscriptions && isActive && (
+        <div
+          className={`text-gray-500 font-semibold p-4 m-5 mb-0 md:mb-5 md:mx-0 text-sm border border-dashed ${
+            !appCtx.isGuest ? "" : "border-orange-400"
+          }`}
+        >
+          {appCtx.isGuest ? (
+            <div className="flex">
+              <div className="relative w-4 mr-2 top-0.5">
+                <WarningIcon />
+              </div>
+              <p>{t("stepPayment.subscriptionWithoutCustomer")}</p>
+            </div>
+          ) : (
+            <div className="flex">
+              <div className="relative w-4 mr-2 top-0.5">
+                <RepeatIcon />
+              </div>
+              <p>{t("stepPayment.subscriptionWithCustomer")}</p>
+            </div>
+          )}
+        </div>
+      )}
+      <ErrorsContainer data-testid="errors-container">
         <StyledErrors
           resource="orders"
           messages={
@@ -73,19 +106,23 @@ const StepPlaceOrder: React.FC<Props> = ({
               return null
             }
             const compactedErrors = props.errors
-            return compactedErrors?.map((error, index) => {
-              if (error?.trim().length === 0 || !error) {
-                return null
-              }
-              return (
-                <ErrorWrapper key={index}>
-                  <ErrorIco>
-                    <ErrorIcon />
-                  </ErrorIco>
-                  <ErrorMessage>{error}</ErrorMessage>
-                </ErrorWrapper>
-              )
-            })
+            return (
+              <>
+                {compactedErrors?.map((error, index) => {
+                  if (error?.trim().length === 0 || !error) {
+                    return null
+                  }
+                  return (
+                    <ErrorWrapper key={index}>
+                      <ErrorIco>
+                        <ErrorIcon />
+                      </ErrorIco>
+                      <ErrorMessage>{error}</ErrorMessage>
+                    </ErrorWrapper>
+                  )
+                })}
+              </>
+            )
           }}
         </StyledErrors>
       </ErrorsContainer>
@@ -96,7 +133,7 @@ const StepPlaceOrder: React.FC<Props> = ({
             <StyledPrivacyAndTermsCheckbox
               id="privacy-terms"
               className="relative form-checkbox top-0.5"
-              data-test-id="checkbox-privacy-and-terms"
+              data-testid="checkbox-privacy-and-terms"
             />
             <Label htmlFor="privacy-terms">
               <Trans
@@ -116,7 +153,7 @@ const StepPlaceOrder: React.FC<Props> = ({
         )}
         <PlaceOrderButtonWrapper>
           <StyledPlaceOrderButton
-            data-test-id="save-payment-button"
+            data-testid="save-payment-button"
             isActive={isActive}
             onClick={handlePlaceOrder}
             label={

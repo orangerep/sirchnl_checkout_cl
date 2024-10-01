@@ -1,15 +1,19 @@
 version: 2.1
 
+orbs:
+  aws-cli: circleci/aws-cli@4.1.3
+  aws-s3: circleci/aws-s3@4.0.0
+
 jobs:
-  build_and_test: # this can be any name you choose
+  test: # this can be any name you choose
     docker:
-      - image: mcr.microsoft.com/playwright:v1.29.2-focal
-    resource_class: large
+      - image: mcr.microsoft.com/playwright:v1.47.0-focal
+    resource_class: medium+
     parallelism: 10
 
     environment:
-      # NODE_ENV: production
       PLAYWRIGHT_BROWSERS_PATH: 0
+      PLAYWRIGHT_JUNIT_OUTPUT_NAME: test-results/junit.xml
 
     steps:
       - checkout
@@ -18,43 +22,126 @@ jobs:
           keys:
             - pnpm-packages-{{ checksum "pnpm-lock.yaml" }}
       - run:
-          name: Install nodejs 18
+          name: Install pnpm
           command: |
-            apt-get update
-            apt-get install -y curl wget gpg
-            curl -sL https://deb.nodesource.com/setup_18.x | bash -
-            apt-get install -y nodejs
+            npm install -g pnpm
       - run:
-          name: Install pnpm package manager
-          command: |
-            curl -L https://pnpm.js.org/pnpm.js | node - add --global pnpm@7
-      - run:
-          name: Install Dependencies
+          name: Setup
           command: |
             pnpm install
+      - run:
+          name: Audit
+          command: pnpm audit --audit-level high && pnpm audit || exit 0
+      - run:
+          name: Install Playwright
+          command: |
             pnpm playwright install chromium
       - save_cache:
           name: Save pnpm Package Cache
           key: pnpm-packages-{{ checksum "pnpm-lock.yaml" }}
           paths:
             - node_modules
-      # Step disabled until Adyen is allowing host with http protocol
-      # - run:
-      #     name: Add E2E_BASE_URL to /etc/hosts
-      #     command: |
-      #       tee -a /etc/hosts \<<<"127.0.0.1 ${E2E_BASE_URL}"
       - run:
           name: Export and serve
           command: |
-            pnpm run export
+            pnpm run build
       - run:
           name: Run tests
           command: |
+            mkdir test-results
             pnpm run serve &
-            TESTFILES=$(circleci tests glob "specs/e2e/**/*.spec.ts" | circleci tests split --split-by=timings)   
-            pnpm playwright test --config=playwright.config.ci.ts ${TESTFILES}
+            TESTFILES=$(circleci tests glob "specs/e2e/**/*.spec.ts")
+            echo $TESTFILES | circleci tests run --command="xargs pnpm playwright test --config=playwright.config.ci.ts --reporter=junit" --verbose --split-by=timings
+      - store_test_results:
+          path: test-results/junit.xml
+      - store_artifacts:
+          path: test-results
+
+  build:
+    docker:
+      - image: cimg/node:18.17.0
+    resource_class: medium
+    environment:
+      FOLDER: checkout
+      NEXT_PUBLIC_DOMAIN: commercelayer.co
+      NEXT_PUBLIC_HOSTED: true
+      NEXT_PUBLIC_SLUG: ""
+      NEXT_PUBLIC_STAGE: "STG"
+      NODE_ENV: production
+      NEXT_PUBLIC_BASE_PATH: /checkout
+    steps:
+      - checkout
+      - run:
+          name: Install
+          command: pnpm install
+      - run:
+          name: Build
+          command: pnpm build
+      - aws-cli/setup:
+          aws_access_key_id: AWS_ACCESS_KEY
+          aws_secret_access_key: AWS_SECRET_ACCESS_KEY
+      - aws-s3/sync:
+          from: out/dist
+          to: "s3://$S3_ASSETS_BUCKET/team/fe-static-apps/$FOLDER/<<pipeline.git.tag>>"
+
+  build-on-pci-bucket:
+    docker:
+      - image: cimg/node:18.17.0
+    resource_class: medium
+    environment:
+      FOLDER: checkout
+      NEXT_PUBLIC_DOMAIN: commercelayer.io
+      NEXT_PUBLIC_SLUG: ""
+      NEXT_PUBLIC_STAGE: "PRD"
+      NODE_ENV: production
+      NEXT_PUBLIC_HOSTED: true
+      NEXT_PUBLIC_BASE_PATH: /checkout
+    steps:
+      - checkout
+      - run:
+          name: Get version
+          command: |
+            pnpm -v
+            npm -v
+            node -v
+      - run:
+          name: Install
+          command: pnpm install
+      - run:
+          name: Build
+          command: pnpm build
+      - aws-cli/setup:
+          aws_access_key_id: AWS_ACCESS_KEY
+          aws_secret_access_key: AWS_SECRET_ACCESS_KEY
+      - aws-s3/sync:
+          from: out/dist
+          to: "s3://$S3_PCI_BUCKET/$FOLDER/<<pipeline.git.tag>>-<<pipeline.git.revision>>"
 
 workflows:
   tests:
     jobs:
-      - build_and_test
+      - test:
+          context: commercelayer
+          filters:
+            tags:
+              ignore: /v.*/
+
+  build-and-push:
+    jobs:
+      - build:
+          context: commercelayer
+          filters:
+            tags:
+              only: /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*).*/
+            branches:
+              ignore: /.*/
+
+  build-and-push-on-pci-bucket:
+    jobs:
+      - build-on-pci-bucket:
+          context: commercelayer
+          filters:
+            tags:
+              only: /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/
+            branches:
+              ignore: /.*/

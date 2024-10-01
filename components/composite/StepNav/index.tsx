@@ -31,15 +31,15 @@ export const StepNav: React.FC<Props> = ({
           return (
             <Step
               key={index}
-              data-test-id={`step_${step.toLocaleLowerCase()}`}
+              data-testid={`step_${step.toLocaleLowerCase()}`}
               data-status={isActive}
               onClick={() => {
                 if (!isLocked) {
                   onStepChange(step)
                 }
               }}
-              isActive={isActive}
-              isLocked={isLocked}
+              $isActive={isActive}
+              $isLocked={isLocked}
             >
               {t(`step${step}.title`)}
               {step !== "Payment" && (

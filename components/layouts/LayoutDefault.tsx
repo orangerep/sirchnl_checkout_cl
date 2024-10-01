@@ -6,8 +6,8 @@ import { Card } from "components/ui/Card"
 import { Container } from "components/ui/Container"
 
 interface Props {
-  aside: React.ReactNode
-  main: React.ReactNode
+  aside: ChildrenType
+  main: ChildrenType
 }
 
 export const LayoutDefault: React.FC<Props> = ({ main, aside }) => {
@@ -17,7 +17,7 @@ export const LayoutDefault: React.FC<Props> = ({ main, aside }) => {
         <Wrapper>
           <Aside>{aside}</Aside>
           <Main>
-            <Card fullHeight>{main}</Card>
+            <Card $fullHeight>{main}</Card>
           </Main>
         </Wrapper>
       </Container>

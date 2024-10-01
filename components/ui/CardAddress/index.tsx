@@ -4,16 +4,12 @@ import tw from "twin.macro"
 interface Props {
   className?: string
   rounded?: boolean
-  // address: string
-  // user: string
+  children?: ChildrenType
 }
 
-export const CardAddress: React.FC<Props> = ({
-  className,
-  // address,
-  // user,
-  children,
-}) => <Wrapper className={className}>{children}</Wrapper>
+export const CardAddress: React.FC<Props> = ({ className, children }) => (
+  <Wrapper className={className}>{children}</Wrapper>
+)
 
 interface WrapperProps {
   rounded?: boolean
