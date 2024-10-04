@@ -142,7 +142,7 @@ export const AddressInputGroup: React.FC<Props> = ({
             // TODO: Extend props?
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
-            options={[{ label: "Netherlands", value: "NL" }]}
+            // options={[{ label: "Netherlands", value: "NL" }]}
           />
           <Label htmlFor={fieldName}>{label}</Label>
         </>
